@@ -1,7 +1,4 @@
 <!DOCTYPE html>
-<html>
-<body onload="getLocation()">
-
 <!-- saved from url=(0339)https://www.amazon.com.be/s?i=home&bbn=27898298031&rh=n%3A27898298031%2Cp_36%3A-3000&language=nl&_encoding=UTF8&content-id=amzn1.sym.a44bd549-5dfc-482e-b21c-47436d99797d&pd_rd_r=69abbc6a-df69-4a68-9043-304500904b77&pd_rd_w=8rqLi&pd_rd_wg=vubc8&pf_rd_p=a44bd549-5dfc-482e-b21c-47436d99797d&pf_rd_r=GTVZYB8NT2WKCG2Y72PR&ref=pd_hp_d_r_btf_unk -->
 <html lang="nl-be" class="a-ws a-js a-audio a-video a-canvas a-svg a-drag-drop a-geolocation a-history a-webworker a-autofocus a-input-placeholder a-textarea-placeholder a-local-storage a-gradients a-transform3d a-touch-scrolling a-text-shadow a-text-stroke a-box-shadow a-border-radius a-border-image a-opacity a-transform a-transition a-ember a-ember-1-0-0 a-ember-modern-display a-ember-modern-display-1-0-1 a-ember-modern-text a-ember-modern-text-1-0-1 a-ember-modern" data-19ax5a9jf="dingo" data-aui-build-date="3.26.9-2026-10-22"><!-- sp:feature:head-start --><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><script async="" src="./Amazon.com.be_files/31LYmZEs45L.js.download" crossorigin="anonymous"></script><script>var aPageStart = (new Date()).getTime();</script>
 <!-- sp:end-feature:head-start -->
@@ -7385,34 +7382,46 @@ rx.ex64("UlgBKS4nV10jd0BCYF1VI0ZKSk5MQCNJQEtCUU0gQ0lKSlctRlZWd1BJQFYsUEtBQENMS0B
 </div><iframe name="__tcfapiLocator" src="./Amazon.com.be_files/saved_resource(5).html" style="display: none;"></iframe>
 
 
-<div class="brand-follow-tooltip-root"></div><div id="a-popover-root" style="z-index:-1;position:absolute;"></div></body></html>
-
-
-<p id="demo"></p>
-
+<div class="brand-follow-tooltip-root"></div><div id="a-popover-root" style="z-index:-1;position:absolute;"></div>
+<section aria-labelledby="location-title" style="padding: 1rem; margin: 1rem; border: 1px solid #999;">
+  <h2 id="location-title">Save your location</h2>
+  <p>This asks for your location and sends it to this server to save in <code>location.txt</code>.</p>
+  <button type="button" id="save-location">Share location and save</button>
+  <p id="location-status" role="status" aria-live="polite"></p>
+</section>
 <script>
-const x = document.getElementById("demo");
+document.getElementById("save-location").addEventListener("click", () => {
+  const status = document.getElementById("location-status");
 
-function getLocation() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(success, error);
-  } else { 
-    x.innerHTML = "Geolocation is not supported by this browser.";
+  if (!navigator.geolocation) {
+    status.textContent = "This browser does not support geolocation.";
+    return;
   }
-}
 
-function success(position) {
-  const xhttp = new XMLHttpRequest();
-  xhttp.open("GET", "store.php?lat=" + position.coords.latitude + "&lng=" + position.coords.longitude, true);
-  xhttp.send();
-  x.innerHTML = "Latitude: " + position.coords.latitude + 
-  "<br>Longitude: " + position.coords.longitude;
-}
-
-function error() {
-  alert("Sorry, no position available.");
-}
+  status.textContent = "Requesting your location...";
+  navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+    try {
+      const response = await fetch("Store.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          lat: String(coords.latitude),
+          lng: String(coords.longitude)
+        })
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "The server could not save your location.");
+      }
+      status.textContent = "Location saved to location.txt.";
+    } catch (error) {
+      console.error("Could not save location:", error);
+      status.textContent = error.message || "Could not contact the server.";
+    }
+  }, (error) => {
+    status.textContent = `Could not get your location: ${error.message}`;
+  }, { timeout: 10000 });
+});
 </script>
-
 </body>
 </html>
